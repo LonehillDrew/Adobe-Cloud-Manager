@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adobe CC Agent — Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root {
+  --bg:           #0d0d12;
+  --sidebar-bg:   #131320;
+  --surface:      #1a1a28;
+  --surface2:     #222235;
+  --border:       rgba(255,255,255,0.07);
+  --border-hi:    rgba(124,58,237,0.45);
+  --accent:       #7c3aed;
+  --accent2:      #a78bfa;
+  --glow:         rgba(124,58,237,0.14);
+  --text:         #e2e2ec;
+  --muted:        #8888aa;
+  --dim:          #44445a;
+  --green:        #10b981;
+  --amber:        #f59e0b;
+  --red:          #ef4444;
+  --blue:         #60a5fa;
+  --rose:         #fb7185;
+  --cyan:         #22d3ee;
+  --sidebar-w:    250px;
+  --topbar-h:     56px;
+  --r:            10px;
+  --shadow:       0 8px 32px rgba(0,0,0,0.45);
+}
+[data-theme="light"] {
+  --bg:         #f4f4f8;
+  --sidebar-bg: #ffffff;
+  --surface:    #ffffff;
+  --surface2:   #f0f0f6;
+  --border:     rgba(0,0,0,0.08);
+  --text:       #1a1a2e;
+  --muted:      #6b6b8a;
+  --dim:        #b0b0c0;
+  --shadow:     0 8px 32px rgba(0,0,0,0.12);
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden}
+a{color:var(--accent2);text-decoration:none}
+button{cursor:pointer;border:none;outline:none;font-family:inherit}
+input,textarea,select{outline:none;font-family:inherit}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{
+  width:var(--sidebar-w);min-width:var(--sidebar-w);
+  background:var(--sidebar-bg);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow-y:auto;overflow-x:hidden;
+  z-index:20;
+}
+.sidebar-logo{
+  padding:18px 14px 14px;
+  border-bottom:1px solid var(--border);
+  user-select:none;
+}
+.logo-row{display:flex;align-items:center;gap:8px}
+.logo-dot{
+  width:9px;height:9px;border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 8px var(--green);
+  flex-shrink:0;transition:all .3s;
+}
+.logo-dot.off{background:var(--red);box-shadow:0 0 8px var(--red)}
+.logo-name{font-size:13px;font-weight:700;color:var(--text)}
+.logo-sub{font-size:10px;color:var(--muted);margin-top:3px;padding-left:17px}
+
+.nav-section{padding:10px 8px 2px}
+.nav-label{
+  font-size:9px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--dim);
+  padding:0 8px;margin-bottom:3px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 10px;border-radius:8px;
+  cursor:pointer;font-size:12.5px;color:var(--muted);
+  transition:all .15s;position:relative;user-select:none;
+}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--glow);color:var(--accent2);font-weight:600}
+.nav-item.active::before{
+  content:'';position:absolute;left:0;top:20%;height:60%;
+  width:3px;border-radius:0 2px 2px 0;background:var(--accent2);
+}
+.nav-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.nav-badge{
+  margin-left:auto;background:var(--surface2);
+  color:var(--muted);font-size:10px;padding:1px 6px;
+  border-radius:10px;font-weight:600;
+}
+.nav-item.active .nav-badge{background:var(--glow);color:var(--accent2)}
+.sidebar-foot{margin-top:auto;padding:10px 8px;border-top:1px solid var(--border)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+
+/* TOPBAR */
+.topbar{
+  height:var(--topbar-h);min-height:var(--topbar-h);
+  background:var(--sidebar-bg);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;padding:0 20px;z-index:10;
+}
+.breadcrumb{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);flex:1;min-width:0}
+.breadcrumb .bc-cur{color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.search-wrap{position:relative}
+.search-input{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:7px 12px 7px 30px;
+  font-size:12px;color:var(--text);width:210px;transition:all .2s;
+}
+.search-input::placeholder{color:var(--dim)}
+.search-input:focus{border-color:var(--accent);width:260px}
+.s-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:12px;pointer-events:none}
+.search-drop{
+  background:var(--sidebar-bg);border:1px solid var(--border);
+  border-radius:10px;position:absolute;top:calc(100% + 6px);left:0;
+  width:380px;box-shadow:var(--shadow);z-index:60;
+  overflow:hidden;max-height:300px;overflow-y:auto;display:none;
+}
+.search-drop.open{display:block}
+.s-result{
+  padding:9px 13px;cursor:pointer;
+  border-bottom:1px solid var(--border);transition:background .1s;
+}
+.s-result:last-child{border-bottom:none}
+.s-result:hover{background:var(--surface2)}
+.s-result-name{font-size:12.5px;font-weight:600;color:var(--text)}
+.s-result-path{font-size:10px;color:var(--dim);font-family:monospace;margin-top:1px}
+.s-none{padding:14px;text-align:center;color:var(--dim);font-size:13px}
+
+.tbtn{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;color:var(--muted);
+  font-size:13px;transition:all .15s;display:flex;align-items:center;gap:5px;
+}
+.tbtn:hover{background:var(--surface2);color:var(--text);border-color:var(--border-hi)}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:24px}
+
+/* ============================================================
+   COMPONENTS
+   ============================================================ */
+
+/* Page header */
+.ph{margin-bottom:22px}
+.ph-title{font-size:20px;font-weight:800;color:var(--text);margin-bottom:3px}
+.ph-sub{font-size:13px;color:var(--muted)}
+.ph-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.stat{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:15px;transition:border-color .2s;
+}
+.stat:hover{border-color:var(--border-hi)}
+.stat-n{font-size:28px;font-weight:800;line-height:1}
+.stat-l{font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+.stat-i{font-size:20px;margin-bottom:7px}
+
+/* Section label */
+.slabel{
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--muted);margin-bottom:10px;
+}
+
+/* Card grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px;margin-bottom:22px}
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:15px;cursor:pointer;
+  transition:all .15s;position:relative;overflow:hidden;
+}
+.card:hover{border-color:var(--border-hi);background:var(--surface2);transform:translateY(-1px);box-shadow:var(--shadow)}
+.card-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+.card-icon{font-size:22px;margin-bottom:9px}
+.card-title{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:3px}
+.card-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.card-meta{font-size:10px;color:var(--dim);margin-top:9px;padding-top:9px;border-top:1px solid var(--border);display:flex;align-items:center;gap:5px}
+
+/* Quick actions */
+.qa-wrap{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:22px}
+.qa{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 13px;background:var(--surface);
+  border:1px solid var(--border);border-radius:20px;
+  font-size:12px;font-weight:600;color:var(--muted);
+  cursor:pointer;transition:all .15s;
+}
+.qa:hover{border-color:var(--accent2);color:var(--accent2);background:var(--glow)}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px;border-radius:8px;font-size:12px;
+  font-weight:600;transition:all .15s;cursor:pointer;
+  border:1px solid transparent;
+}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:#6d28d9}
+.btn-s{background:var(--surface2);color:var(--text);border-color:var(--border)}
+.btn-s:hover{border-color:var(--accent2);color:var(--accent2)}
+.btn-sm{padding:5px 10px;font-size:11px}
+
+/* File viewer */
+.fv{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.fv-bar{
+  display:flex;align-items:center;gap:9px;
+  padding:11px 15px;border-bottom:1px solid var(--border);
+  background:var(--surface2);flex-wrap:wrap;
+}
+.fv-path{font-family:monospace;font-size:11px;color:var(--muted);flex:1;word-break:break-all}
+.fv-body{padding:24px}
+
+/* Markdown styles */
+.md h1{font-size:21px;font-weight:800;margin-bottom:14px;padding-bottom:11px;border-bottom:1px solid var(--border)}
+.md h2{font-size:16px;font-weight:700;margin:22px 0 9px;color:var(--text)}
+.md h3{font-size:13.5px;font-weight:700;margin:16px 0 7px;color:var(--accent2)}
+.md p{margin-bottom:11px;color:var(--muted);line-height:1.7;font-size:13.5px}
+.md ul,.md ol{margin:7px 0 11px 19px}
+.md li{margin-bottom:4px;color:var(--muted);font-size:13.5px;line-height:1.6}
+.md code{font-family:'SF Mono','Fira Code',monospace;font-size:11.5px;background:var(--surface2);padding:2px 6px;border-radius:4px;color:var(--accent2);border:1px solid var(--border)}
+.md pre{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:15px;margin:11px 0;overflow-x:auto}
+.md pre code{background:none;border:none;padding:0;color:var(--text)}
+.md table{width:100%;border-collapse:collapse;margin:11px 0;font-size:12.5px}
+.md th{background:var(--surface2);padding:7px 11px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--border)}
+.md td{padding:8px 11px;border-bottom:1px solid var(--border);color:var(--muted)}
+.md tr:last-child td{border-bottom:none}
+.md tr:hover td{background:var(--surface2)}
+.md blockquote{border-left:3px solid var(--accent);padding:8px 15px;background:var(--glow);border-radius:0 8px 8px 0;margin:11px 0}
+.md blockquote p{color:var(--text);margin:0}
+.md hr{border:none;border-top:1px solid var(--border);margin:18px 0}
+.md strong{color:var(--text)}
+.md a{color:var(--accent2)}
+
+/* Panel */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.panel-hd{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.panel-ht{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.panel-bd{padding:15px}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:18px 0}
+
+/* Two col */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+
+/* Forms */
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg.full{grid-column:1/-1}
+.fl{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.fi{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text);transition:border-color .2s}
+.fi:focus{border-color:var(--accent)}
+.fi::placeholder{color:var(--dim)}
+.fi-ta{min-height:76px;resize:vertical}
+.fhint{font-size:10px;color:var(--dim)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+
+/* Client card */
+.cc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:15px;cursor:pointer;transition:all .15s}
+.cc:hover{border-color:var(--border-hi);transform:translateY(-1px);box-shadow:var(--shadow)}
+.cc-init{
+  width:38px;height:38px;border-radius:9px;
+  background:var(--glow);border:1px solid var(--border-hi);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:var(--accent2);margin-bottom:9px;
+}
+.cc-name{font-size:14px;font-weight:700;margin-bottom:3px}
+.cc-sub{font-size:11.5px;color:var(--muted)}
+
+/* Checklist */
+.cl{list-style:none}
+.cl li{display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:13px;color:var(--muted);border-bottom:1px solid var(--border)}
+.cl li:last-child{border-bottom:none}
+.cl-num{color:var(--accent2);font-weight:700;flex-shrink:0;margin-top:1px}
+
+/* Loading */
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--dim);gap:10px;font-size:13px}
+.spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Empty */
+.empty{text-align:center;padding:48px 24px;color:var(--dim)}
+.empty-i{font-size:34px;margin-bottom:11px}
+.empty-t{font-size:14px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.empty-d{font-size:12.5px}
+
+/* Toast */
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:7px}
+.toast{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:11px 15px;font-size:12.5px;
+  display:flex;align-items:center;gap:9px;
+  box-shadow:var(--shadow);animation:tIn .2s ease;min-width:230px;
+}
+.toast.ok{border-color:var(--green)}
+.toast.er{border-color:var(--red)}
+.toast.inf{border-color:var(--blue)}
+@keyframes tIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.72);
+  backdrop-filter:blur(4px);z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;width:100%;
+  display:flex;flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,.55);
+  transform:translateY(8px) scale(.98);transition:transform .2s;
+}
+.overlay.open .modal{transform:translateY(0) scale(1)}
+.modal-hd{
+  display:flex;align-items:center;gap:10px;
+  padding:13px 15px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.modal-title{font-size:13px;font-weight:700;flex:1}
+.modal-sub{font-family:monospace;font-size:10px;color:var(--muted)}
+
+/* Editor modal */
+#editorOverlay .modal{max-width:1100px;height:82vh}
+.modal-body{flex:1;display:flex;min-height:0}
+.ed-pane,.pv-pane{flex:1;overflow:auto;padding:14px}
+.ed-pane{border-right:1px solid var(--border)}
+.pane-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);display:block;margin-bottom:7px}
+.ed-ta{
+  width:100%;height:calc(100% - 28px);
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;padding:13px;
+  font-family:'SF Mono','Fira Code',monospace;font-size:12px;
+  color:var(--text);resize:none;line-height:1.6;transition:border-color .2s;
+}
+.ed-ta:focus{border-color:var(--accent)}
+
+/* Client / Error modals */
+#clientOverlay .modal{max-width:640px;height:auto;max-height:92vh}
+#errorOverlay .modal{max-width:600px;height:auto;max-height:92vh}
+.modal-scroll{overflow-y:auto;padding:18px}
+
+/* Setup screen */
+.setup-screen{display:flex;align-items:center;justify-content:center;height:100%}
+.setup-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:15px;padding:30px;width:100%;max-width:430px;
+  box-shadow:var(--shadow);
+}
+.setup-card h2{font-size:17px;font-weight:800;margin-bottom:5px}
+.setup-card p{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.5}
+.err-box{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:9px 13px;margin-bottom:14px;font-size:12px;color:var(--red)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-row">
+        <span class="logo-dot off" id="statusDot"></span>
+        <span class="logo-name">CC Design Agent</span>
+      </div>
+      <div class="logo-sub" id="statusSub">Not connected</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <div class="nav-item active" id="nav-dashboard" onclick="go('dashboard')"><span class="nav-icon">🏠</span>Dashboard</div>
+      <div class="nav-item" id="nav-prompts" onclick="go('prompts')"><span class="nav-icon">🤖</span>Agent Prompts</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Knowledge</div>
+      <div class="nav-item" id="nav-knowledge" onclick="go('knowledge')"><span class="nav-icon">📚</span>Core Knowledge</div>
+      <div class="nav-item" id="nav-apps" onclick="go('apps')"><span class="nav-icon">🎨</span>Adobe Apps</div>
+      <div class="nav-item" id="nav-exports" onclick="go('exports')"><span class="nav-icon">📤</span>Export Guides</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Work</div>
+      <div class="nav-item" id="nav-clients" onclick="go('clients')">
+        <span class="nav-icon">👥</span>Clients
+        <span class="nav-badge" id="clientBadge">0</span>
+      </div>
+      <div class="nav-item" id="nav-products" onclick="go('products')"><span class="nav-icon">📦</span>Products</div>
+      <div class="nav-item" id="nav-schemas" onclick="go('schemas')"><span class="nav-icon">⚙️</span>Schemas</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Tools</div>
+      <div class="nav-item" id="nav-troubleshooting" onclick="go('troubleshooting')"><span class="nav-icon">🔧</span>Troubleshooting</div>
+      <div class="nav-item" id="nav-search-page" onclick="go('search-page')"><span class="nav-icon">🔍</span>Search All Files</div>
+    </div>
+
+    <div class="sidebar-foot">
+      <div class="nav-item" id="nav-settings" onclick="go('settings')"><span class="nav-icon">⚙️</span>Settings</div>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="breadcrumb">
+        <span id="bcRoot">Home</span>
+        <span id="bcSep" style="display:none;color:var(--dim)">›</span>
+        <span class="bc-cur" id="bcCur"></span>
+      </div>
+
+      <div class="search-wrap">
+        <span class="s-icon">🔍</span>
+        <input class="search-input" id="searchInput" placeholder="Search… (⌘K)"
+          oninput="onSearchType(this.value)"
+          onfocus="document.getElementById('searchDrop').classList.add('open')"
+          onblur="setTimeout(()=>document.getElementById('searchDrop').classList.remove('open'),180)" />
+        <div class="search-drop" id="searchDrop"></div>
+      </div>
+
+      <button class="tbtn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
+      <button class="tbtn" onclick="go('settings')" title="Settings">⚙️</button>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content" id="content">
+      <div class="loading"><div class="spin"></div>Loading…</div>
+    </div>
+  </main>
+</div>
+
+<!-- ========== EDITOR MODAL ========== -->
+<div class="overlay" id="editorOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <span>✏️</span>
+      <div>
+        <div class="modal-title" id="edTitle">Edit File</div>
+        <div class="modal-sub" id="edPath"></div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:7px;">
+        <button class="btn btn-s btn-sm" onclick="closeEditor()">Cancel</button>
+        <button class="btn btn-p btn-sm" id="saveBtn" onclick="saveFile()">💾 Save to GitHub</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="ed-pane">
+        <span class="pane-label">Markdown Source</span>
+        <textarea class="ed-ta" id="edTA" oninput="livePreview()"></textarea>
+      </div>
+      <div class="pv-pane">
+        <span class="pane-label">Live Preview</span>
+        <div class="md" id="edPreview"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== NEW CLIENT MODAL ========== -->
+<div class="overlay" id="clientOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <span>👥</span>
+      <div>
+        <div class="modal-title">New Client</div>
+        <div class="modal-sub">Creates /clients/[name]/brand_guidelines.md in GitHub</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:7px;">
+        <button class="btn btn-s btn-sm" onclick="closeClientModal()">Cancel</button>
+        <button class="btn btn-p btn-sm" onclick="createClient()">Create Client</button>
+      </div>
+    </div>
+    <div class="modal-scroll">
+      <div class="fgrid">
+        <div class="fg"><label class="fl">Client Name *</label><input class="fi" id="cf-name" placeholder="e.g. Brand X"/></div>
+        <div class="fg"><label class="fl">Industry</label><input class="fi" id="cf-industry" placeholder="e.g. Fashion, Tech"/></div>
+        <div class="fg"><label class="fl">Primary Contact</label><input class="fi" id="cf-contact" placeholder="Name / email"/></div>
+        <div class="fg"><label class="fl">Brand Tone</label><input class="fi" id="cf-tone" placeholder="e.g. Bold, Minimal"/></div>
+        <div class="fg"><label class="fl">Primary Colour HEX</label><input class="fi" id="cf-col1" placeholder="#FF0000"/></div>
+        <div class="fg"><label class="fl">Secondary Colour HEX</label><input class="fi" id="cf-col2" placeholder="#000000"/></div>
+        <div class="fg"><label class="fl">Primary Font</label><input class="fi" id="cf-font" placeholder="e.g. Helvetica Neue"/></div>
+        <div class="fg"><label class="fl">Target Audience</label><input class="fi" id="cf-audience" placeholder="e.g. 25–40 professionals"/></div>
+        <div class="fg full"><label class="fl">Notes / Special Requirements</label><textarea class="fi fi-ta" id="cf-notes" placeholder="Printer contacts, delivery preferences, restrictions…"></textarea></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ERROR LOG MODAL ========== -->
+<div class="overlay" id="errorOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <span>📝</span>
+      <div>
+        <div class="modal-title">Log New Error</div>
+        <div class="modal-sub">Appends to knowledge/troubleshooting/error_log.md</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:7px;">
+        <button class="btn btn-s btn-sm" onclick="closeErrorModal()">Cancel</button>
+        <button class="btn btn-p btn-sm" onclick="saveErrorLog()">Save Entry</button>
+      </div>
+    </div>
+    <div class="modal-scroll">
+      <div class="fgrid">
+        <div class="fg"><label class="fl">Date</label><input class="fi" type="date" id="el-date"/></div>
+        <div class="fg"><label class="fl">App</label>
+          <select class="fi" id="el-app">
+            <option>Illustrator</option><option>Photoshop</option>
+            <option>InDesign</option><option>Bridge</option>
+            <option>Acrobat</option><option>Other</option>
+          </select>
+        </div>
+        <div class="fg full"><label class="fl">Error Description</label><input class="fi" id="el-desc" placeholder="Short description of what went wrong"/></div>
+        <div class="fg full"><label class="fl">What Happened</label><textarea class="fi fi-ta" id="el-happened" placeholder="Describe the situation…"></textarea></div>
+        <div class="fg full"><label class="fl">What Caused It</label><textarea class="fi fi-ta" id="el-cause" placeholder="Root cause…"></textarea></div>
+        <div class="fg full"><label class="fl">How I Fixed It</label><textarea class="fi fi-ta" id="el-fix" placeholder="Steps taken to resolve…"></textarea></div>
+        <div class="fg full"><label class="fl">Prevention Going Forward</label><textarea class="fi fi-ta" id="el-prevention" placeholder="How to avoid next time…"></textarea></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TOASTS ========== -->
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const S = {
+  cfg: JSON.parse(localStorage.getItem('acc_cfg') || '{}'),
+  tree: [],
+  clients: [],
+  cache: {},
+  view: 'dashboard',
+  filePath: null,
+  fileSha: null,
+  dark: localStorage.getItem('acc_theme') !== 'light',
+  connected: false
+};
+
+// Apply theme on load
+document.documentElement.setAttribute('data-theme', S.dark ? 'dark' : 'light');
+document.getElementById('themeBtn').textContent = S.dark ? '☀️' : '🌙';
+
+// ============================================================
+// GITHUB API
+// ============================================================
+function ghHeaders() {
+  return {
+    'Authorization': `Bearer ${S.cfg.token}`,
+    'Accept': 'application/vnd.github.v3+json'
+  };
+}
+const ghBase = () => `https://api.github.com/repos/${S.cfg.owner}/${S.cfg.repo}`;
+
+async function ghGet(path) {
+  const r = await fetch(`${ghBase()}/contents/${path}`, { headers: ghHeaders() });
+  if (!r.ok) throw new Error(`GitHub ${r.status}: ${path}`);
+  return r.json();
+}
+
+async function ghFile(path) {
+  const d = await ghGet(path);
+  return { content: dec(d.content), sha: d.sha };
+}
+
+async function ghPut(path, content, sha, msg) {
+  const body = { message: msg || `Update ${path} via Dashboard`, content: enc(content) };
+  if (sha) body.sha = sha;
+  const r = await fetch(`${ghBase()}/contents/${path}`, {
+    method: 'PUT', headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.message || `Save failed ${r.status}`); }
+  return r.json();
+}
+
+async function ghTree() {
+  const rr = await fetch(`${ghBase()}`, { headers: ghHeaders() });
+  const rd = await rr.json();
+  const branch = rd.default_branch || 'main';
+  const tr = await fetch(`${ghBase()}/git/trees/${branch}?recursive=1`, { headers: ghHeaders() });
+  const td = await tr.json();
+  return td.tree || [];
+}
+
+async function testConn() {
+  if (!S.cfg.owner || !S.cfg.repo || !S.cfg.token) return false;
+  try {
+    const r = await fetch(`${ghBase()}`, { headers: ghHeaders() });
+    return r.ok;
+  } catch { return false; }
+}
+
+function enc(str) { return btoa(unescape(encodeURIComponent(str))); }
+function dec(b64) { return decodeURIComponent(escape(atob(b64.replace(/\n/g, '')))); }
+
+// ============================================================
+// BOOT
+// ============================================================
+async function boot() {
+  if (!S.cfg.owner || !S.cfg.repo || !S.cfg.token) { showSetup(); return; }
+  setContent(`<div class="loading"><div class="spin"></div>Connecting to GitHub…</div>`);
+  try {
+    if (!await testConn()) { showSetup('Connection failed — check your token and repo name.'); return; }
+    S.connected = true;
+    setStatus(true);
+    S.tree = await ghTree();
+    S.clients = S.tree
+      .filter(f => f.path.startsWith('clients/') && !f.path.startsWith('clients/_template') && f.path.endsWith('brand_guidelines.md'))
+      .map(f => ({ name: slugToName(f.path.split('/')[1]), slug: f.path.split('/')[1], path: f.path }));
+    document.getElementById('clientBadge').textContent = S.clients.length;
+    go('dashboard');
+  } catch(e) { showSetup(e.message); }
+}
+
+function setStatus(ok) {
+  document.getElementById('statusDot').className = ok ? 'logo-dot' : 'logo-dot off';
+  document.getElementById('statusSub').textContent = ok ? `${S.cfg.owner}/${S.cfg.repo}` : 'Not connected';
+}
+
+function slugToName(s) { return s.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
+function setContent(html) { document.getElementById('content').innerHTML = html; }
+
+// ============================================================
+// ROUTING
+// ============================================================
+function go(view) {
+  S.view = view;
+  // Nav highlight
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const key = view.startsWith('file:') ? null : view.split('/')[0];
+  if (key) { const el = document.getElementById('nav-' + key); if (el) el.classList.add('active'); }
+
+  const pages = { dashboard:pageDashboard, prompts:pagePrompts, knowledge:pageKnowledge, apps:pageApps, exports:pageExports, clients:pageClients, products:pageProducts, schemas:pageSchemas, troubleshooting:pageTroubleshooting, 'search-page':pageSearch, settings:pageSettings };
+  if (view.startsWith('file:')) { pageFile(view.slice(5)); return; }
+  if (pages[view]) pages[view]();
+  else pageDashboard();
+}
+
+function bc(root, cur) {
+  document.getElementById('bcRoot').textContent = root;
+  document.getElementById('bcSep').style.display = cur ? 'inline' : 'none';
+  document.getElementById('bcCur').textContent = cur || '';
+}
+
+// ============================================================
+// SETUP
+// ============================================================
+function showSetup(err) {
+  setStatus(false);
+  setContent(`<div class="setup-screen"><div class="setup-card">
+    <h2>🔗 Connect to GitHub</h2>
+    <p>Enter your repo details to power this dashboard. Your token stays in your browser only — never sent anywhere except GitHub's API.</p>
+    ${err ? `<div class="err-box">⚠️ ${esc(err)}</div>` : ''}
+    <div style="display:flex;flex-direction:column;gap:11px;">
+      <div class="fg"><label class="fl">GitHub Username</label><input class="fi" id="su-owner" value="${esc(S.cfg.owner||'')}" placeholder="your-github-username"/></div>
+      <div class="fg"><label class="fl">Repository Name</label><input class="fi" id="su-repo" value="${esc(S.cfg.repo||'')}" placeholder="adobe-cc-agent"/></div>
+      <div class="fg">
+        <label class="fl">Personal Access Token</label>
+        <input class="fi" type="password" id="su-token" value="${esc(S.cfg.token||'')}" placeholder="ghp_xxxxxxxxxxxx"/>
+        <span class="fhint">Fine-grained token — Contents read/write on this repo only. <a href="https://github.com/settings/tokens/new" target="_blank">Create one →</a></span>
+      </div>
+      <button class="btn btn-p" style="width:100%;justify-content:center;padding:11px;" onclick="doSetup()">Connect Dashboard</button>
+    </div>
+  </div></div>`);
+}
+
+async function doSetup() {
+  const o = document.getElementById('su-owner')?.value.trim();
+  const r = document.getElementById('su-repo')?.value.trim();
+  const t = document.getElementById('su-token')?.value.trim();
+  if (!o||!r||!t) { toast('All fields required','er'); return; }
+  S.cfg = { owner:o, repo:r, token:t };
+  localStorage.setItem('acc_cfg', JSON.stringify(S.cfg));
+  await boot();
+}
+
+// ============================================================
+// PAGES
+// ============================================================
+
+// --- DASHBOARD ---
+function pageDashboard() {
+  bc('Dashboard');
+  const files = S.tree.filter(f=>f.type==='blob').length;
+  const prods = S.tree.filter(f=>f.path.startsWith('products/')&&f.path.endsWith('setup_guide.md')).length;
+  setContent(`
+    <div class="ph"><div class="ph-title">Good to have you back 👋</div><div class="ph-sub">Adobe CC Design Agent — your design operations brain</div></div>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-i">📄</div><div class="stat-n">${files}</div><div class="stat-l">Knowledge Files</div></div>
+      <div class="stat"><div class="stat-i">👥</div><div class="stat-n">${S.clients.length}</div><div class="stat-l">Clients</div></div>
+      <div class="stat"><div class="stat-i">📦</div><div class="stat-n">${prods}</div><div class="stat-l">Product Guides</div></div>
+      <div class="stat"><div class="stat-i">🎨</div><div class="stat-n">5</div><div class="stat-l">Adobe App Guides</div></div>
+    </div>
+
+    <div class="slabel">Quick Actions</div>
+    <div class="qa-wrap">
+      <button class="qa" onclick="openClientModal()">👥 New Client</button>
+      <button class="qa" onclick="go('file:prompts/system_prompt.md')">🤖 System Prompt</button>
+      <button class="qa" onclick="go('file:knowledge/export_guides/print_export.md')">🖨️ Print Export Guide</button>
+      <button class="qa" onclick="go('file:knowledge/export_guides/digital_export.md')">💻 Digital Export Guide</button>
+      <button class="qa" onclick="go('file:knowledge/colour_management.md')">🎨 Colour Management</button>
+      <button class="qa" onclick="go('file:knowledge/troubleshooting/colour_issues.md')">🔧 Troubleshoot Colour</button>
+      <button class="qa" onclick="openErrorModal()">📝 Log an Error</button>
+      <button class="qa" onclick="go('schemas')">📋 Export Specs</button>
+    </div>
+
+    <div class="slabel">Sections</div>
+    <div class="grid">
+      ${dc('🤖','Agent Prompts','System prompt, task rules, output format, and worked examples for Claude.','prompts','#7c3aed')}
+      ${dc('📚','Knowledge Base','Colour management, domain facts, and core reference guides.','knowledge','#3b82f6')}
+      ${dc('🎨','Adobe Apps','Per-app settings for Illustrator, Photoshop, InDesign, Bridge, Acrobat.','apps','#f59e0b')}
+      ${dc('📤','Export Guides','Print CMYK, digital RGB, and social media export workflows.','exports','#10b981')}
+      ${dc('👥','Clients','Brand guidelines, colour palettes, and typography per client.','clients','#ec4899')}
+      ${dc('📦','Products','Setup guides for magazine, poster, brand identity, and more.','products','#8b5cf6')}
+      ${dc('⚙️','Schemas','PDF presets, digital specs, and social media dimension tables.','schemas','#06b6d4')}
+      ${dc('🔧','Troubleshooting','Common errors, colour shifts, and their step-by-step fixes.','troubleshooting','#ef4444')}
+    </div>
+
+    <div class="slabel">Activating the Agent in Claude</div>
+    <div class="panel">
+      <div class="panel-hd"><div class="panel-ht">How to use this repo with Claude</div></div>
+      <div class="panel-bd">
+        <ul class="cl">
+          <li><span class="cl-num">1</span>Go to your Claude Project → open the system prompt settings</li>
+          <li><span class="cl-num">2</span>Open System Prompt here (Agent Prompts section), copy the full content</li>
+          <li><span class="cl-num">3</span>Paste as your Claude Project system prompt and save</li>
+          <li><span class="cl-num">4</span>For client-specific work, paste the client brand guidelines into the conversation</li>
+          <li><span class="cl-num">5</span>For product-type work, paste the relevant product setup guide</li>
+        </ul>
+        <div style="margin-top:13px;"><button class="btn btn-s btn-sm" onclick="go('file:prompts/system_prompt.md')">View System Prompt →</button></div>
+      </div>
+    </div>`);
+}
+function dc(i,t,d,v,c){return `<div class="card" onclick="go('${v}')"><div class="card-bar" style="background:${c}"></div><div class="card-icon">${i}</div><div class="card-title">${t}</div><div class="card-desc">${d}</div></div>`;}
+
+// --- PROMPTS ---
+function pagePrompts() {
+  bc('Agent Prompts');
+  const files = S.tree.filter(f=>f.type==='blob'&&f.path.startsWith('prompts/')&&f.path.endsWith('.md'));
+  setContent(`
+    <div class="ph"><div class="ph-title">Agent Prompts</div><div class="ph-sub">The brain of the Claude agent — system prompt, rules, and worked examples.</div></div>
+    <div class="grid">${files.map(f=>{
+      const name = f.path.split('/').pop().replace('.md','').replace(/_/g,' ');
+      const isExample = f.path.includes('/examples/');
+      const color = isExample ? '#f59e0b' : '#7c3aed';
+      const icon = isExample ? '💡' : '📄';
+      return `<div class="card" onclick="go('file:${f.path}')">
+        <div class="card-bar" style="background:${color}"></div>
+        <div class="card-icon">${icon}</div>
+        <div class="card-title" style="text-transform:capitalize">${name}</div>
+        <div class="card-meta">📄 ${f.path}</div>
+      </div>`;
+    }).join('')}</div>`);
+}
+
+// --- KNOWLEDGE ---
+function pageKnowledge() {
+  bc('Knowledge Base');
+  setContent(`
+    <div class="ph"><div class="ph-title">Knowledge Base</div><div class="ph-sub">Core reference files — always loaded into the agent context.</div></div>
+    <div class="slabel">Always Loaded</div>
+    <div class="grid">
+      <div class="card" onclick="go('file:knowledge/colour_management.md')"><div class="card-bar" style="background:#7c3aed"></div><div class="card-icon">🎨</div><div class="card-title">Colour Management</div><div class="card-desc">RGB vs CMYK, ICC profiles, soft proofing, common colour problems and fixes.</div></div>
+      <div class="card" onclick="go('file:knowledge/domain_facts.md')"><div class="card-bar" style="background:#3b82f6"></div><div class="card-icon">📐</div><div class="card-title">Domain Facts</div><div class="card-desc">Bleed specs, paper sizes, resolution rules, binding rules, PDF standard comparison.</div></div>
+    </div>
+    <div class="slabel">Browse by Category</div>
+    <div class="grid">
+      ${dc('🎨','Adobe App Guides','Illustrator, Photoshop, InDesign, Bridge, Acrobat.','apps','#f59e0b')}
+      ${dc('📤','Export Guides','Print, digital, and social export workflows.','exports','#10b981')}
+      ${dc('🔧','Troubleshooting','Colour shifts, errors, and how to fix them.','troubleshooting','#ef4444')}
+    </div>`);
+}
+
+// --- ADOBE APPS ---
+function pageApps() {
+  bc('Adobe Apps');
+  const apps = [
+    {p:'knowledge/adobe/illustrator_settings.md',i:'🖊️',t:'Illustrator',d:'New doc setup, colour settings, artboards, SVG export, font handling.',c:'#f59e0b'},
+    {p:'knowledge/adobe/photoshop_settings.md',i:'🖼️',t:'Photoshop',d:'Non-destructive layers, smart objects, actions, flatten methods.',c:'#3b82f6'},
+    {p:'knowledge/adobe/indesign_settings.md',i:'📰',t:'InDesign',d:'Magazine setup, paragraph styles, master pages, preflight.',c:'#fb7185'},
+    {p:'knowledge/adobe/bridge_settings.md',i:'🗂️',t:'Bridge',d:'Labels, batch rename, metadata templates, batch Photoshop actions.',c:'#10b981'},
+    {p:'knowledge/adobe/acrobat_settings.md',i:'📋',t:'Acrobat',d:'Preflight, Output Preview, reduce file size, combine PDFs, permissions.',c:'#8b5cf6'},
+  ];
+  setContent(`
+    <div class="ph"><div class="ph-title">Adobe App Guides</div><div class="ph-sub">Settings, best practices, and common issues for each app.</div></div>
+    <div class="grid">${apps.map(a=>`<div class="card" onclick="go('file:${a.p}')"><div class="card-bar" style="background:${a.c}"></div><div class="card-icon">${a.i}</div><div class="card-title">${a.t}</div><div class="card-desc">${a.d}</div></div>`).join('')}</div>`);
+}
+
+// --- EXPORTS ---
+function pageExports() {
+  bc('Export Guides');
+  setContent(`
+    <div class="ph"><div class="ph-title">Export Guides</div><div class="ph-sub">Step-by-step workflows for print, digital, and social outputs.</div></div>
+    <div class="slabel">Export Workflows</div>
+    <div class="grid">
+      <div class="card" onclick="go('file:knowledge/export_guides/print_export.md')"><div class="card-bar" style="background:#ef4444"></div><div class="card-icon">🖨️</div><div class="card-title">Print Export</div><div class="card-desc">CMYK, PDF/X-4, InDesign/PSD/AI to press-ready PDF. Full pre-export checklist.</div></div>
+      <div class="card" onclick="go('file:knowledge/export_guides/digital_export.md')"><div class="card-bar" style="background:#3b82f6"></div><div class="card-icon">💻</div><div class="card-title">Digital Export</div><div class="card-desc">Interactive PDF, SVG, JPEG, PNG — RGB workflows for screen distribution.</div></div>
+      <div class="card" onclick="go('file:knowledge/export_guides/social_export.md')"><div class="card-bar" style="background:#10b981"></div><div class="card-icon">📱</div><div class="card-title">Social Media Export</div><div class="card-desc">Platform rules, JPEG vs PNG, export settings from Photoshop and InDesign.</div></div>
+    </div>
+    <div class="slabel">Export Preset Specs</div>
+    <div class="grid">
+      <div class="card" onclick="go('file:schemas/export_presets/print_pdf_preset.md')"><div class="card-bar" style="background:#ef4444"></div><div class="card-icon">⚙️</div><div class="card-title">Print PDF Preset</div><div class="card-desc">Full PDF/X-4 settings table — General, Compression, Marks, Output, Advanced.</div></div>
+      <div class="card" onclick="go('file:schemas/export_presets/digital_pdf_preset.md')"><div class="card-bar" style="background:#3b82f6"></div><div class="card-icon">⚙️</div><div class="card-title">Digital PDF Preset</div><div class="card-desc">Interactive PDF settings and file size targets per document type.</div></div>
+      <div class="card" onclick="go('file:schemas/export_presets/social_media_specs.md')"><div class="card-bar" style="background:#10b981"></div><div class="card-icon">📊</div><div class="card-title">Social Media Specs</div><div class="card-desc">All platforms, pixel dimensions, ratios, and format requirements in one table.</div></div>
+    </div>`);
+}
+
+// --- CLIENTS ---
+function pageClients() {
+  bc('Clients');
+  let html = `<div class="ph ph-row"><div><div class="ph-title">Clients</div><div class="ph-sub">${S.clients.length} client${S.clients.length!==1?'s':''} — each with their own brand guidelines.</div></div><button class="btn btn-p" onclick="openClientModal()">+ New Client</button></div>`;
+  if (!S.clients.length) {
+    html += `<div class="empty"><div class="empty-i">👥</div><div class="empty-t">No clients yet</div><div class="empty-d">Click New Client to create your first.</div><div style="margin-top:14px"><button class="btn btn-p" onclick="openClientModal()">+ New Client</button></div></div>`;
+  } else {
+    html += `<div class="grid">` + S.clients.map(c=>`
+      <div class="cc" onclick="go('file:${c.path}')">
+        <div class="cc-init">${c.name.charAt(0)}${(c.name.split(' ')[1]||'').charAt(0)}</div>
+        <div class="cc-name">${esc(c.name)}</div>
+        <div class="cc-sub">Brand Guidelines</div>
+        <div class="card-meta">📄 ${c.path}</div>
+      </div>`).join('') + `</div>`;
+  }
+  html += `<div class="divider"></div><div class="slabel">Template</div><div class="grid"><div class="card" onclick="go('file:clients/_template/brand_guidelines.md')"><div class="card-title">Brand Guidelines Template</div><div class="card-desc">The base template duplicated for each new client. Edit to update default fields.</div><div class="card-meta">📄 clients/_template/brand_guidelines.md</div></div></div>`;
+  setContent(html);
+}
+
+// --- PRODUCTS ---
+function pageProducts() {
+  bc('Products');
+  const products = [
+    {p:'products/magazine/setup_guide.md',i:'📖',t:'Magazine',d:'New issue checklist, paragraph styles, folder structure, export checklist, ad spec template.',c:'#7c3aed'},
+    {p:'products/poster/setup_guide.md',i:'🎭',t:'Poster',d:'Resolution guide by print size, large format rules, bleed diagram, flatten export workflow.',c:'#f59e0b'},
+    {p:'products/brand_identity/setup_guide.md',i:'✨',t:'Brand Identity',d:'Full deliverables structure, logo artboard layout, ASE swatch export, CMYK conversion guide.',c:'#10b981'},
+  ];
+  setContent(`
+    <div class="ph"><div class="ph-title">Products</div><div class="ph-sub">Setup guides, checklists, and export specs per deliverable type.</div></div>
+    <div class="slabel">Active Guides</div>
+    <div class="grid">${products.map(p=>`<div class="card" onclick="go('file:${p.p}')"><div class="card-bar" style="background:${p.c}"></div><div class="card-icon">${p.i}</div><div class="card-title">${p.t}</div><div class="card-desc">${p.d}</div></div>`).join('')}</div>
+    <div class="slabel">Ready to Build</div>
+    <div class="grid">
+      <div class="card" style="opacity:.45;cursor:default;"><div class="card-bar" style="background:#3b82f6"></div><div class="card-icon">📱</div><div class="card-title">Social Media</div><div class="card-desc">Guide not written yet. Ask Claude to build the social media product guide.</div></div>
+      <div class="card" style="opacity:.45;cursor:default;"><div class="card-bar" style="background:#ef4444"></div><div class="card-icon">📦</div><div class="card-title">Packaging</div><div class="card-desc">Guide not written yet. Ask Claude to build the packaging product guide.</div></div>
+    </div>`);
+}
+
+// --- SCHEMAS ---
+function pageSchemas() {
+  bc('Schemas');
+  setContent(`
+    <div class="ph"><div class="ph-title">Schemas &amp; Export Presets</div><div class="ph-sub">Structured specs ready to replicate in InDesign and Photoshop.</div></div>
+    <div class="grid">
+      <div class="card" onclick="go('file:schemas/export_presets/print_pdf_preset.md')"><div class="card-bar" style="background:#ef4444"></div><div class="card-icon">🖨️</div><div class="card-title">Print PDF Preset</div><div class="card-desc">Full PDF/X-4:2008 settings — all tabs documented.</div></div>
+      <div class="card" onclick="go('file:schemas/export_presets/digital_pdf_preset.md')"><div class="card-bar" style="background:#3b82f6"></div><div class="card-icon">💻</div><div class="card-title">Digital PDF Preset</div><div class="card-desc">Interactive PDF settings, file size targets per document type.</div></div>
+      <div class="card" onclick="go('file:schemas/export_presets/social_media_specs.md')"><div class="card-bar" style="background:#10b981"></div><div class="card-icon">📱</div><div class="card-title">Social Media Specs</div><div class="card-desc">Complete dimensions table for all platforms.</div></div>
+      <div class="card" onclick="go('file:config/model_config.json')"><div class="card-bar" style="background:#8b5cf6"></div><div class="card-icon">⚙️</div><div class="card-title">Agent Config</div><div class="card-desc">Which knowledge files load always vs per task trigger.</div></div>
+      <div class="card" onclick="go('file:config/memory.md')"><div class="card-bar" style="background:#6b7280"></div><div class="card-icon">🧠</div><div class="card-title">Memory Rules</div><div class="card-desc">Trigger words and the knowledge files they load per session.</div></div>
+    </div>`);
+}
+
+// --- TROUBLESHOOTING ---
+function pageTroubleshooting() {
+  bc('Troubleshooting');
+  setContent(`
+    <div class="ph ph-row"><div><div class="ph-title">Troubleshooting</div><div class="ph-sub">Common issues, colour problems, and your running error log.</div></div><button class="btn btn-p" onclick="openErrorModal()">📝 Log New Error</button></div>
+    <div class="grid">
+      <div class="card" onclick="go('file:knowledge/troubleshooting/colour_issues.md')"><div class="card-bar" style="background:#ef4444"></div><div class="card-icon">🎨</div><div class="card-title">Colour Issues</div><div class="card-desc">Blues going purple, black looking grey, washed-out colours, missing profiles, preflight failures.</div></div>
+      <div class="card" onclick="go('file:knowledge/troubleshooting/error_log.md')"><div class="card-bar" style="background:#f59e0b"></div><div class="card-icon">📝</div><div class="card-title">Error Log</div><div class="card-desc">Your personal running log of errors and fixes. Add new entries directly from this dashboard.</div></div>
+    </div>`);
+}
+
+// --- FILE VIEW ---
+async function pageFile(path) {
+  const name = path.split('/').pop().replace('.md','').replace(/_/g,' ');
+  const parent = path.split('/').slice(0,-1).join('/');
+  bc(parent || 'File', name);
+
+  // Highlight correct nav
+  const secMap = { prompts:'prompts', knowledge:'knowledge', products:'products', clients:'clients', schemas:'schemas', config:'schemas' };
+  const sec = secMap[path.split('/')[0]];
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  if (sec) { const el = document.getElementById('nav-'+sec); if (el) el.classList.add('active'); }
+
+  setContent(`<div class="loading"><div class="spin"></div>Loading file…</div>`);
+  try {
+    let data = S.cache[path];
+    if (!data) { data = await ghFile(path); S.cache[path] = data; }
+    S.filePath = path; S.fileSha = data.sha;
+
+    const isJson = path.endsWith('.json');
+    const body = isJson
+      ? `<pre style="font-family:monospace;font-size:12px;color:var(--text);white-space:pre-wrap;">${esc(data.content)}</pre>`
+      : `<div class="md">${marked.parse(data.content)}</div>`;
+
+    setContent(`<div class="fv">
+      <div class="fv-bar">
+        <span class="fv-path">${path}</span>
+        <button class="btn btn-s btn-sm" onclick="openEditor('${path}')">✏️ Edit</button>
+        <button class="btn btn-s btn-sm" onclick="doPrint()">🖨️ Print</button>
+        <button class="btn btn-s btn-sm" onclick="doCopy()">📋 Copy</button>
+      </div>
+      <div class="fv-body" id="fvBody">${body}</div>
+    </div>`);
+  } catch(e) {
+    setContent(`<div class="empty"><div class="empty-i">❌</div><div class="empty-t">Could not load file</div><div class="empty-d">${esc(e.message)}</div></div>`);
+  }
+}
+
+// --- SEARCH PAGE ---
+function pageSearch() {
+  bc('Search');
+  setContent(`
+    <div class="ph"><div class="ph-title">Search</div><div class="ph-sub">Search across all files in the repo.</div></div>
+    <input class="fi" id="pgSearch" placeholder="Search all files…" style="font-size:15px;padding:12px 16px;max-width:600px;width:100%;display:block;" oninput="doPageSearch(this.value)" autofocus/>
+    <div id="pgResults" style="margin-top:16px;"></div>`);
+}
+
+function doPageSearch(q) {
+  const el = document.getElementById('pgResults');
+  if (!q.trim()) { el.innerHTML=''; return; }
+  const res = fileSearch(q);
+  if (!res.length) { el.innerHTML=`<div class="empty"><div class="empty-t">No results for "${esc(q)}"</div></div>`; return; }
+  el.innerHTML = res.slice(0,20).map(r=>`<div class="card" style="margin-bottom:8px;" onclick="go('file:${r.path}')">
+    <div class="card-title" style="text-transform:capitalize">${r.path.split('/').pop().replace('.md','').replace(/_/g,' ')}</div>
+    <div style="font-family:monospace;font-size:10px;color:var(--dim);margin-bottom:5px;">${r.path}</div>
+    <div class="card-desc">${r.snippet}</div>
+  </div>`).join('');
+}
+
+// --- SETTINGS ---
+function pageSettings() {
+  bc('Settings');
+  const {owner,repo,token} = S.cfg;
+  setContent(`
+    <div class="ph"><div class="ph-title">Settings</div><div class="ph-sub">GitHub connection and dashboard preferences.</div></div>
+    <div class="two">
+      <div>
+        <div class="panel">
+          <div class="panel-hd"><div class="panel-ht">GitHub Connection</div></div>
+          <div class="panel-bd" style="display:flex;flex-direction:column;gap:11px;">
+            <div class="fg"><label class="fl">GitHub Username</label><input class="fi" id="s-owner" value="${esc(owner||'')}" placeholder="username"/></div>
+            <div class="fg"><label class="fl">Repository Name</label><input class="fi" id="s-repo" value="${esc(repo||'')}" placeholder="adobe-cc-agent"/></div>
+            <div class="fg">
+              <label class="fl">Personal Access Token</label>
+              <input class="fi" type="password" id="s-token" value="${esc(token||'')}" placeholder="ghp_xxxxxxxxxxxx"/>
+              <span class="fhint">Fine-grained token — Contents read/write on this repo only.</span>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-p" onclick="saveSettings()">Save &amp; Reconnect</button>
+              <button class="btn btn-s" onclick="runTestConn()">Test Connection</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="panel">
+          <div class="panel-hd"><div class="panel-ht">GitHub Pages Setup</div></div>
+          <div class="panel-bd">
+            <ul class="cl">
+              <li><span class="cl-num">1</span>Push the repo to GitHub</li>
+              <li><span class="cl-num">2</span>Go to repo Settings → Pages</li>
+              <li><span class="cl-num">3</span>Source: Deploy from a branch</li>
+              <li><span class="cl-num">4</span>Branch: main — Folder: /docs — Save</li>
+              <li><span class="cl-num">5</span>Live in ~1 minute at:</li>
+              <li><span class="cl-num">🔗</span><a href="https://${esc(owner||'[username]')}.github.io/${esc(repo||'[repo]')}" target="_blank">https://${esc(owner||'[username]')}.github.io/${esc(repo||'[repo]')}</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd"><div class="panel-ht">Create a Token</div></div>
+          <div class="panel-bd" style="font-size:12.5px;color:var(--muted);line-height:1.65;">
+            <p>GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token</p>
+            <p>Repository access: Only this repo. Permissions: Contents → Read and write.</p>
+            <div style="margin-top:10px;"><a href="https://github.com/settings/tokens/new" target="_blank" class="btn btn-s btn-sm">Open GitHub Token Page →</a></div>
+          </div>
+        </div>
+      </div>
+    </div>`);
+}
+
+async function saveSettings() {
+  const o = document.getElementById('s-owner')?.value.trim();
+  const r = document.getElementById('s-repo')?.value.trim();
+  const t = document.getElementById('s-token')?.value.trim();
+  if (!o||!r||!t) { toast('All fields required','er'); return; }
+  S.cfg = {owner:o,repo:r,token:t};
+  localStorage.setItem('acc_cfg', JSON.stringify(S.cfg));
+  toast('Saved — reconnecting…','inf');
+  S.cache = {};
+  await boot();
+}
+async function runTestConn() {
+  const ok = await testConn();
+  toast(ok ? '✅ Connected successfully' : '❌ Connection failed — check token and repo name', ok ? 'ok' : 'er');
+}
+
+// ============================================================
+// EDITOR
+// ============================================================
+async function openEditor(path) {
+  document.getElementById('edTitle').textContent = path.split('/').pop().replace('.md','').replace(/_/g,' ');
+  document.getElementById('edPath').textContent = path;
+  document.getElementById('editorOverlay').classList.add('open');
+
+  let data = S.cache[path];
+  if (!data) {
+    document.getElementById('edTA').value = 'Loading…';
+    try { data = await ghFile(path); S.cache[path] = data; } catch(e) { toast('Load failed: '+e.message,'er'); closeEditor(); return; }
+  }
+  S.filePath = path; S.fileSha = data.sha;
+  document.getElementById('edTA').value = data.content;
+  livePreview();
+}
+function closeEditor(){ document.getElementById('editorOverlay').classList.remove('open'); }
+function livePreview(){ document.getElementById('edPreview').innerHTML = marked.parse(document.getElementById('edTA').value); }
+
+async function saveFile() {
+  const path = S.filePath;
+  const content = document.getElementById('edTA').value;
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  try {
+    const res = await ghPut(path, content, S.fileSha, `Update ${path} via Dashboard`);
+    const newSha = res.content?.sha;
+    if (newSha) { S.fileSha = newSha; S.cache[path] = {content, sha:newSha}; }
+    toast(`✅ Saved: ${path}`,'ok');
+    closeEditor();
+    if (S.view === 'file:'+path) go('file:'+path);
+  } catch(e) { toast('❌ '+e.message,'er'); }
+  finally { btn.textContent = '💾 Save to GitHub'; btn.disabled = false; }
+}
+
+// ============================================================
+// NEW CLIENT
+// ============================================================
+function openClientModal(){ document.getElementById('clientOverlay').classList.add('open'); }
+function closeClientModal(){ document.getElementById('clientOverlay').classList.remove('open'); }
+
+async function createClient() {
+  const name = document.getElementById('cf-name').value.trim();
+  if (!name) { toast('Client name required','er'); return; }
+  const slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  const f = id => document.getElementById(id).value.trim();
+  const today = new Date().toISOString().split('T')[0];
+  const content = `# ${name} — Brand Guidelines\n\n## Client Overview\n\n| Field | Value |\n|---|---|\n| Client Name | ${name} |\n| Industry | ${f('cf-industry')||'—'} |\n| Primary Contact | ${f('cf-contact')||'—'} |\n| Brand Tone | ${f('cf-tone')||'—'} |\n| Target Audience | ${f('cf-audience')||'—'} |\n| Date Onboarded | ${today} |\n\n---\n\n## Colour Palette\n\n### Primary Colours\n| Name | HEX | RGB | CMYK | Pantone |\n|---|---|---|---|---|\n| Primary | ${f('cf-col1')||''} | | | |\n| Secondary | ${f('cf-col2')||''} | | | |\n\n---\n\n## Typography\n\n| Role | Font Family | Weight |\n|---|---|---|\n| Headline | ${f('cf-font')||''} | Bold |\n| Body | ${f('cf-font')||''} | Regular |\n| Caption | ${f('cf-font')||''} | Light |\n\n---\n\n## Export Requirements\n\n| Deliverable | Colour | Profile | Bleed |\n|---|---|---|---|\n| Magazine | CMYK | ISO Coated v2 300% | 3mm |\n| Poster | CMYK | FOGRA39 | 5mm |\n| Social media | RGB | sRGB | None |\n| Digital PDF | RGB | sRGB | None |\n\n---\n\n## Notes\n\n${f('cf-notes')||'None yet.'}\n`;
+  try {
+    await ghPut(`clients/${slug}/brand_guidelines.md`, content, null, `Add client: ${name}`);
+    S.clients.push({name,slug,path:`clients/${slug}/brand_guidelines.md`});
+    S.cache[`clients/${slug}/brand_guidelines.md`] = {content,sha:null};
+    document.getElementById('clientBadge').textContent = S.clients.length;
+    closeClientModal();
+    toast(`✅ Client created: ${name}`,'ok');
+    ['cf-name','cf-industry','cf-contact','cf-tone','cf-col1','cf-col2','cf-font','cf-audience','cf-notes'].forEach(id=>document.getElementById(id).value='');
+    go('clients');
+  } catch(e){ toast('❌ '+e.message,'er'); }
+}
+
+// ============================================================
+// ERROR LOG
+// ============================================================
+function openErrorModal(){
+  document.getElementById('el-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('errorOverlay').classList.add('open');
+}
+function closeErrorModal(){ document.getElementById('errorOverlay').classList.remove('open'); }
+
+async function saveErrorLog() {
+  const desc = document.getElementById('el-desc').value.trim();
+  if (!desc){ toast('Description required','er'); return; }
+  const f = id => document.getElementById(id).value.trim();
+  const entry = `\n---\n\n## ${f('el-date')} — ${f('el-app')} — ${desc}\nWhat happened: ${f('el-happened')||'—'}\nWhat caused it: ${f('el-cause')||'—'}\nHow I fixed it: ${f('el-fix')||'—'}\nPrevention going forward: ${f('el-prevention')||'—'}\n`;
+  try {
+    let existing = {content:'',sha:null};
+    try { existing = await ghFile('knowledge/troubleshooting/error_log.md'); } catch{}
+    const updated = existing.content + entry;
+    const res = await ghPut('knowledge/troubleshooting/error_log.md', updated, existing.sha, `Add error: ${desc}`);
+    S.cache['knowledge/troubleshooting/error_log.md'] = {content:updated, sha:res.content?.sha};
+    closeErrorModal();
+    toast('✅ Error logged','ok');
+    ['el-desc','el-happened','el-cause','el-fix','el-prevention'].forEach(id=>document.getElementById(id).value='');
+  } catch(e){ toast('❌ '+e.message,'er'); }
+}
+
+// ============================================================
+// SEARCH
+// ============================================================
+function fileSearch(q) {
+  const ql = q.toLowerCase();
+  const hits = [];
+  // Search paths
+  S.tree.filter(f=>f.type==='blob'&&f.path.endsWith('.md')).forEach(f=>{
+    if (f.path.toLowerCase().includes(ql)) hits.push({path:f.path,snippet:f.path});
+  });
+  // Search cached content
+  Object.entries(S.cache).forEach(([path,data])=>{
+    if (hits.find(h=>h.path===path)) return;
+    if (data.content && data.content.toLowerCase().includes(ql)) {
+      const idx = data.content.toLowerCase().indexOf(ql);
+      const snip = '…'+esc(data.content.slice(Math.max(0,idx-50),idx+90))+'…';
+      hits.push({path,snippet:snip});
+    }
+  });
+  return hits;
+}
+
+let stimer;
+function onSearchType(v) {
+  clearTimeout(stimer);
+  stimer = setTimeout(()=>{
+    const el = document.getElementById('searchDrop');
+    if (!v.trim()){ el.innerHTML=''; return; }
+    const res = fileSearch(v);
+    if (!res.length){ el.innerHTML=`<div class="s-none">No results</div>`; return; }
+    el.innerHTML = res.slice(0,7).map(r=>`<div class="s-result" onmousedown="go('file:${r.path}');document.getElementById('searchInput').value=''">
+      <div class="s-result-name">${r.path.split('/').pop().replace('.md','').replace(/_/g,' ')}</div>
+      <div class="s-result-path">${r.path}</div>
+    </div>`).join('');
+  },180);
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function toggleTheme(){
+  S.dark = !S.dark;
+  document.documentElement.setAttribute('data-theme', S.dark?'dark':'light');
+  document.getElementById('themeBtn').textContent = S.dark?'☀️':'🌙';
+  localStorage.setItem('acc_theme', S.dark?'dark':'light');
+}
+
+function toast(msg, type='inf', ms=3400){
+  const c = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${{ok:'✅',er:'❌',inf:'ℹ️'}[type]||'ℹ️'}</span><span>${msg}</span>`;
+  c.appendChild(el);
+  setTimeout(()=>el.remove(), ms);
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function doPrint(){
+  const body = document.getElementById('fvBody')?.innerHTML;
+  if (!body) return;
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Print</title><style>body{font-family:-apple-system,sans-serif;padding:40px;max-width:820px;margin:auto;color:#111;font-size:13px;line-height:1.6}h1{font-size:20px;border-bottom:1px solid #ddd;padding-bottom:10px}h2{font-size:16px;margin-top:20px}h3{font-size:13px;color:#5b21b6}table{border-collapse:collapse;width:100%;margin:10px 0}th,td{border:1px solid #ddd;padding:7px 10px;text-align:left}th{background:#f5f5f5;font-size:11px}code{background:#f5f5f5;padding:2px 4px;border-radius:3px;font-family:monospace}pre{background:#f5f5f5;padding:12px;border-radius:6px;overflow:auto}blockquote{border-left:4px solid #7c3aed;padding:8px 14px;margin:10px 0;background:#f5f0ff}@media print{body{padding:0}}</style></head><body>${body}</body></html>`);
+  w.document.close();
+  w.print();
+}
+
+async function doCopy(){
+  const d = S.cache[S.filePath];
+  if (d){ await navigator.clipboard.writeText(d.content); toast('📋 Copied to clipboard','ok',2000); }
+}
+
+// Close modals on overlay click
+['editorOverlay','clientOverlay','errorOverlay'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){ if(e.target===this) this.classList.remove('open'); });
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e=>{
+  if (e.key==='Escape'){ ['editorOverlay','clientOverlay','errorOverlay'].forEach(id=>document.getElementById(id).classList.remove('open')); }
+  if ((e.metaKey||e.ctrlKey)&&e.key==='k'){ e.preventDefault(); document.getElementById('searchInput').focus(); }
+  if ((e.metaKey||e.ctrlKey)&&e.key==='s'&&document.getElementById('editorOverlay').classList.contains('open')){ e.preventDefault(); saveFile(); }
+});
+
+// ============================================================
+// START
+// ============================================================
+marked.setOptions({ breaks:true, gfm:true });
+boot();
+</script>
+</body>
+</html>
