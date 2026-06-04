@@ -723,7 +723,7 @@ async function boot() {
 
 function setStatus(ok) {
   document.getElementById('statusDot').className = ok ? 'logo-dot' : 'logo-dot off';
-  const status = `${S.cfg.owner}/${S.cfg.repo}`;
+  const status = (S.cfg && S.cfg.owner && S.cfg.repo) ? `${S.cfg.owner}/${S.cfg.repo}` : 'Not connected';
   document.getElementById('statusSub').textContent = ok ? status : 'Not connected';
 }
 
