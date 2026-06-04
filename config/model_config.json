@@ -1,0 +1,30 @@
+{
+  "agent_name": "Adobe CC Design Agent",
+  "model": "claude-sonnet-4-20250514",
+  "description": "AI design operations assistant for a full-service media house and brand agency. Covers Illustrator, Photoshop, InDesign, Bridge, Acrobat and the full Adobe CC suite.",
+  "system_prompt_file": "prompts/system_prompt.md",
+  "task_rules_file": "prompts/task_rules.md",
+  "output_format_file": "prompts/output_format.md",
+  "always_load": [
+    "knowledge/colour_management.md",
+    "knowledge/domain_facts.md"
+  ],
+  "load_per_task": {
+    "illustrator": "knowledge/adobe/illustrator_settings.md",
+    "photoshop": "knowledge/adobe/photoshop_settings.md",
+    "indesign": "knowledge/adobe/indesign_settings.md",
+    "bridge": "knowledge/adobe/bridge_settings.md",
+    "acrobat": "knowledge/adobe/acrobat_settings.md",
+    "print_export": "knowledge/export_guides/print_export.md",
+    "digital_export": "knowledge/export_guides/digital_export.md",
+    "social_media": "knowledge/export_guides/social_export.md",
+    "troubleshooting": "knowledge/troubleshooting/colour_issues.md",
+    "magazine": "products/magazine/setup_guide.md",
+    "poster": "products/poster/setup_guide.md",
+    "brand_identity": "products/brand_identity/setup_guide.md"
+  },
+  "client_context": "clients/[client-name]/brand_guidelines.md",
+  "default_interaction": "chat",
+  "operator": "solo",
+  "last_updated": "2026"
+}
